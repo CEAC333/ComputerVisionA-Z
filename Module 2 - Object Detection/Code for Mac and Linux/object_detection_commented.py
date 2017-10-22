@@ -22,10 +22,10 @@ def detect(frame, net, transform): # We define a detect function that will take 
     # detections = [batch, number of classes, number of occurances of the class, (score, x0, y0, x1, y1)] 
     # score for each occurence of each class, from high to low
     # score threshold: 0.6
-    # x0, y0: coord of upper left corner of detected rectangle
-    # x1, y1: ccord of lower right corner of detected rectangle
+    # x0, y0: coord of upper left corner of detected rectangle, between -1, 1
+    # x1, y1: ccord of lower right corner of detected rectangle, between -1, 1
     detections = y.data # We create the detections tensor contained in the output y.
-    # first 2 : scaler values of upper left corner rectangle detector
+    # first 2 : scale values of upper left corner rectangle detector
     # second 2: scaler values of lower right corner of rectangle detector
     scale = torch.Tensor([width, height, width, height]) # We create a tensor object of dimensions [width, height, width, height].
     for i in range(detections.size(1)): # For every class:
@@ -35,6 +35,7 @@ def detect(frame, net, transform): # We define a detect function that will take 
         # first 0: index o fbatch
         # score of occurence j of class i
         while detections[0, i, j, 0] >= 0.6: # We take into account all the occurrences j of the class i that have a matching score larger than 0.6.
+            # scale back from (-1, 1) to (width, height)   
             pt = (detections[0, i, j, 1:] * scale).numpy() # We get the coordinates of the points at the upper left and the lower right of the detector rectangle.
             cv2.rectangle(frame, (int(pt[0]), int(pt[1])), (int(pt[2]), int(pt[3])), (255, 0, 0), 2) # We draw a rectangle around the detected object.
             cv2.putText(frame, labelmap[i - 1], (int(pt[0]), int(pt[1])), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA) # We put the label of the class right above the rectangle.
