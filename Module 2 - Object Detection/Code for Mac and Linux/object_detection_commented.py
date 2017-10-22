@@ -17,11 +17,23 @@ def detect(frame, net, transform): # We define a detect function that will take 
     # 0 is index of the first dimension of the batch
     # create a torch variable
     x = Variable(x.unsqueeze(0)) # We add a fake dimension corresponding to the batch.
+    # y has a torch tensort and a gradient
     y = net(x) # We feed the neural network ssd with the image and we get the output y.
+    # detections = [batch, number of classes, number of occurances of the class, (score, x0, y0, x1, y1)] 
+    # score for each occurence of each class, from high to low
+    # score threshold: 0.6
+    # x0, y0: coord of upper left corner of detected rectangle
+    # x1, y1: ccord of lower right corner of detected rectangle
     detections = y.data # We create the detections tensor contained in the output y.
+    # first 2 : scaler values of upper left corner rectangle detector
+    # second 2: scaler values of lower right corner of rectangle detector
     scale = torch.Tensor([width, height, width, height]) # We create a tensor object of dimensions [width, height, width, height].
     for i in range(detections.size(1)): # For every class:
         j = 0 # We initialize the loop variable j that will correspond to the occurrences of the class.
+        # j     : index of occurence of class i
+        # last 0: index of score
+        # first 0: index o fbatch
+        # score of occurence j of class i
         while detections[0, i, j, 0] >= 0.6: # We take into account all the occurrences j of the class i that have a matching score larger than 0.6.
             pt = (detections[0, i, j, 1:] * scale).numpy() # We get the coordinates of the points at the upper left and the lower right of the detector rectangle.
             cv2.rectangle(frame, (int(pt[0]), int(pt[1])), (int(pt[2]), int(pt[3])), (255, 0, 0), 2) # We draw a rectangle around the detected object.
@@ -30,10 +42,12 @@ def detect(frame, net, transform): # We define a detect function that will take 
     return frame # We return the original frame with the detector rectangle and the label around the detected object.
 
 # Creating the SSD neural network
+# arguments: train, test
 net = build_ssd('test') # We create an object that is our neural network ssd.
 net.load_state_dict(torch.load('ssd300_mAP_77.43_v2.pth', map_location = lambda storage, loc: storage)) # We get the weights of the neural network from another one that is pretrained (ssd300_mAP_77.43_v2.pth).
 
 # Creating the transformation
+# tuple: scales for color values
 transform = BaseTransform(net.size, (104/256.0, 117/256.0, 123/256.0)) # We create an object of the BaseTransform class, a class that will do the required transformations so that the image can be the input of the neural network.
 
 # Doing some Object Detection on a video
